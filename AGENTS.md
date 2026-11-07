@@ -67,7 +67,7 @@ These were found by profiling the file. Confirm them again when the export chang
 2. **Column misalignment.** About 2,333 rows have a `Type` value that is not a record type (for example `1`, `2`, `4`). Their values are shifted into the wrong columns: prices appear in `Condition`, dates in `Invoice Date`, and country names in price fields. These rows need to be re-aligned or excluded, and the choice documented. Do not guess silently.
 3. **Exact duplicates.** About 1,545 rows are exact duplicates of other rows.
 4. **Placeholder strings.** `NULL`, `N/A`, and empty strings are used interchangeably for missing values.
-5. **Excel date serials.** Some dates appear as numbers such as `58828` instead of dates.
+5. **Excel date serials.** Some dates appear as numbers such as `58828` instead of dates. These only occur in misaligned rows, so dropping those rows removes them. Valid `Invoiced` rows all use `m/d/yyyy`.
 6. **Inconsistent taxonomy.** `Non-HVM` appears as both a `Module` and a `SubType` value. Some rows have blank or `NULL` `Module`/`SubType`.
 7. **Corrupted order numbers.** `OrderNo` contains decimals such as `0.845546`. Treat the column as unreliable.
 8. **Mixed condition codes.** `Condition` mixes letters with numeric values such as `0` and `870`.
@@ -118,6 +118,7 @@ docker compose down -v           # stop and remove named volumes (needed after d
 
 cd backend && uv sync            # install backend deps locally
 cd backend && uv run fastapi dev main.py
+cd backend && uv run python cleaning.py   # rebuild data/inventory.db from data/data.csv
 
 cd frontend && npm ci
 cd frontend && npm run dev
