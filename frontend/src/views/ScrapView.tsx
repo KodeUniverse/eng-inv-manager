@@ -1,18 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, PieChart, type PieChartCell } from '@mantine/charts'
 import { Alert, Badge, Box, Card, Grid, Group, Loader, Stack, Text, Title, useComputedColorScheme } from '@mantine/core'
-import { AllCommunityModule, colorSchemeDark, colorSchemeLight, ModuleRegistry, themeQuartz, type ColDef, type IRowNode, type ICellRendererParams } from 'ag-grid-community'
+import { type ColDef, type IRowNode, type ICellRendererParams } from 'ag-grid-community'
 import { AgGridReact } from 'ag-grid-react'
+import { gridThemes } from '../agGrid'
 import { getJson } from '../api'
 import type { ScrapGroup, ScrapPart, ScrapSummary } from '../types'
-
-ModuleRegistry.registerModules([AllCommunityModule])
 
 const MIN_RECORDS = 5
 const PAGE_SIZE = 15
 const PIE_COLORS = ['blue.6', 'teal.6', 'orange.6', 'grape.6', 'red.6', 'cyan.6', 'gray.6']
-const darkTheme = themeQuartz.withPart(colorSchemeDark)
-const lightTheme = themeQuartz.withPart(colorSchemeLight)
 
 function percent(value: number) {
   return `${(value * 100).toFixed(1)}%`
@@ -42,7 +39,7 @@ function RateCell({ value, data }: ICellRendererParams<ScrapPart>) {
 }
 
 const columns: ColDef<ScrapPart>[] = [
-  { field: 'part', headerName: 'Part number', filter: 'agTextColumnFilter' },
+  { field: 'part', headerName: 'Part No.', filter: 'agTextColumnFilter' },
   { field: 'description', headerName: 'Description', filter: 'agTextColumnFilter', flex: 1 },
   { field: 'scrapped', headerName: 'Scrapped', type: 'rightAligned', filter: 'agNumberColumnFilter' },
   { field: 'total', headerName: 'Total records', type: 'rightAligned', filter: 'agNumberColumnFilter' },
@@ -148,7 +145,7 @@ function ScrapPartsTable({ parts }: { parts: ScrapPart[] }) {
       </Text>
       <Box mt="md">
         <AgGridReact<ScrapPart>
-          theme={colorScheme === 'dark' ? darkTheme : lightTheme}
+          theme={gridThemes[colorScheme]}
           rowData={parts}
           columnDefs={columns}
           defaultColDef={{ sortable: true, filter: true, resizable: true }}

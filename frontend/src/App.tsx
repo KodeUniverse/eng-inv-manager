@@ -10,6 +10,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
+import RepairEconomicsView from "./views/RepairEconomicsView";
 import ScrapView from "./views/ScrapView";
 
 const VIEWS = [
@@ -19,13 +20,24 @@ const VIEWS = [
   { label: "Decision support", value: "decision" },
 ];
 
+function renderView(view: string) {
+  switch (view) {
+    case "scrap":
+      return <ScrapView />;
+    case "repair":
+      return <RepairEconomicsView />;
+    default:
+      return <Text c="dimmed">This view isn't built yet.</Text>;
+  }
+}
+
 function App() {
   const [view, setView] = useState("scrap");
   const { toggleColorScheme } = useMantineColorScheme();
   const colorScheme = useComputedColorScheme("dark");
 
   return (
-    <Container size="xl" py="md">
+    <Container size={1600} py="md">
       <Stack>
         <Group justify="space-between" wrap="wrap">
           <Title order={2}>Parts Inventory</Title>
@@ -36,11 +48,7 @@ function App() {
             </Button>
           </Group>
         </Group>
-        {view === "scrap" ? (
-          <ScrapView />
-        ) : (
-          <Text c="dimmed">This view isn't built yet.</Text>
-        )}
+        {renderView(view)}
       </Stack>
     </Container>
   );

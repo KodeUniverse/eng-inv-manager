@@ -13,6 +13,7 @@
     "@mantine/charts": "^9.7.5",
     "@mantine/core": "^9.7.5",
     "@mantine/hooks": "^9.7.5",
+    "@nivo/boxplot": "^0.99.0",
     "@tanstack/react-query": "^5.107.1",
     "ag-grid-community": "^36.3.0",
     "ag-grid-react": "^36.3.0",

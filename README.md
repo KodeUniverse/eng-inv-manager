@@ -41,6 +41,9 @@ The raw file is `backend/data/data.csv` (39,338 rows, 25 columns). It is never e
 | `QTY` blank on inventory rows | 863 | Left as `NULL`. Not filled with 0 or 1. |
 | `Invoice Date` in mixed formats | Invoiced rows | Parsed as `m/d/yyyy` and stored as `YYYY-MM-DD`. The script stops if a date fails to parse. Excel serial numbers and codes such as `F0301` appear only in dropped rows. |
 | `Updated_Description` holds taxonomy labels such as `Non-HVM` | 12,340 | Not used. The app shows the raw `description` column instead. |
+| Sold (`Invoiced`) rows with a repair cost of 0 | 1,265 | Kept. Margin is blank and the row is labelled "No repair cost recorded". A zero cost would otherwise show as a 100% margin. |
+| Sold rows with a sales price of 0 or less | 152 | Kept. Margin is blank and the row is labelled "Non-positive sales price". These include negative prices, probably credits or reversals. |
+| Sold rows where the price is at or below the repair cost | 358 | Kept and included in margins, since they are real losses. |
 
 Unpriced inventory and scrapped rows are kept. They have no price because they aren't sold, so dropping them would remove the on-hand and scrap views.
 
@@ -81,6 +84,24 @@ API endpoints:
 - `GET /parts/scrapped?min_records=5` returns the part table. `min_records` defaults to 5.
 
 The part table shows the raw `description`. The `Updated_Description` column is not used (see the data issues above). Where a part number has more than one description, the table shows the alphabetically last one.
+
+## Repair economics view
+
+The repair economics view is built. It shows:
+
+- Margin by Module and by SubType, as box plots. Each box shows the median, the middle half of sales, and whiskers at the 10th and 90th percentiles. Hovering over a box shows the sales count, median, middle 50% range, and whisker values. The whiskers are percentiles, not the true minimum and maximum, so a few extreme sales do not stretch the axis. Sales beyond the −100% to 100% axis are not drawn. The axis is limited to −100% to 100%, and the chart says how many sales fall outside that range.
+- A table of sold (`Invoiced`) records, with sales price, repair cost, margin, and the reason a margin is blank. Sorting and filtering work as in the scrap view. A switch above the table hides sales without a margin, and another shows only weak margins. The box plots always use only sales with a margin.
+- **Weak margin:** a repair margin below 20%, including negative margins. In the table, negative margins are shown in red, margins from 0% to below 20% in yellow, and margins of 20% or more in green. The weakest-margins switch lists these sales with the lowest margin first.
+
+Definitions:
+
+- **Margin:** (unit sales price − unit repair cost) ÷ unit sales price. Unit values are used, so quantity does not change the margin.
+- **Blank margin:** a sale with no repair cost or a non-positive sales price has no margin.
+
+Limits:
+
+- Margin is sale price minus repair cost only. The dataset has no acquisition or lease cost, so this is not profit.
+- Each sale counts once in the box plots, so a part that sells often has more weight than one that sells rarely.
 
 ## Planned decision-support feature
 

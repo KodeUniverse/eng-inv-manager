@@ -11,6 +11,20 @@ export type ScrapSummary = {
   sub_type: ScrapGroup[]
 }
 
+export type SoldPart = {
+  part: string
+  description: string
+  module: string
+  sub_type: string
+  invoice_date: string
+  destination_country: string
+  qty: number | null
+  unit_sales_price: number
+  repair_unit_cost: number
+  margin: number | null
+  margin_note: string | null
+}
+
 export type ScrapPart = {
   part: string
   description: string

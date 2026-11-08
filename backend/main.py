@@ -72,6 +72,27 @@ def _read_rows(sql: str, params: tuple = ()) -> list[dict]:
         return [dict(row) for row in conn.execute(sql, params).fetchall()]
 
 
+@app.get("/parts/sold")
+def sold_parts():
+    """Invoiced parts with unit margin. Margin is null where it can't be computed."""
+    rows = _read_rows(
+        """
+        SELECT part, description, module, sub_type, invoice_date, destination_country,
+               qty, unit_sales_price, repair_unit_cost
+        FROM parts_clean WHERE type = 'Invoiced' ORDER BY invoice_date DESC
+        """
+    )
+    for row in rows:
+        price, cost = row["unit_sales_price"], row["repair_unit_cost"]
+        if cost == 0:
+            row["margin"], row["margin_note"] = None, "No repair cost recorded"
+        elif price <= 0:
+            row["margin"], row["margin_note"] = None, "Non-positive sales price"
+        else:
+            row["margin"], row["margin_note"] = round((price - cost) / price, 4), None
+    return rows
+
+
 @app.get("/parts/scrapped/summary")
 def scrapped_summary():
     """Scrap counts by Module and SubType, with share of all scrap and scrap rate."""
