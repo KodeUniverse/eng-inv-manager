@@ -107,6 +107,7 @@ These rules apply to all code in this repo.
 - **No mention of the project's origin.** Do not write "case study", "assignment", "interview", "take-home", or similar in code, docs, comments, or commit messages. Describe the project as an internal product.
 - **Keep the raw data untouched.** Never write to `backend/data/data.csv`.
 - **Match existing style.** Follow the patterns already in `backend/main.py` and `frontend/src/`.
+- **No implicit string concatenation.** Do not split one string across adjacent literals. Use a single literal, a triple-quoted string for multi-line SQL, or an f-string.
 
 ## Commands
 
@@ -128,9 +129,14 @@ cd frontend && npm run build
 
 ## Working rules for agents
 
+- **Re-read the "Coding standards" section before every code change.** Do not rely on memory of it from earlier in the session. Re-read it at the start of each task and again before you report back.
+- **Check your diff against the coding standards before finishing.** Confirm each changed file: no comments that narrate the code, docstrings of one or two lines, no abstraction that is not needed yet, no origin wording, and the style of the surrounding file.
 - Read the existing code before changing it. Do not refactor files that are not part of the task.
 - Verify changes: run the service, check the endpoint or page, and run lint or build for the touched package.
 - Do not add new dependencies without a clear reason. Mention any new dependency in the summary.
 - Do not commit or push unless asked.
 - When a data decision is ambiguous, state the assumption in the README and in the summary to the user. Do not hide it in code.
 - If the data cannot answer a question, say what is missing instead of inventing a number.
+- **Keep the README current as you work.** Update `README.md` in the same change as any feature, data rule, or definition. Do not leave it for the end. It must cover the sections listed under "README requirements" in `docs/requirements.md`.
+- Record every data decision in the README when it is made: the rule, the rows affected, and the reason.
+- Record every metric definition in the README when it is added, including its denominator and its limits.
