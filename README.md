@@ -90,7 +90,8 @@ The part table shows the raw `description`. The `Updated_Description` column is 
 The repair economics view is built. It shows:
 
 - Margin by Module and by SubType, as box plots. Each box shows the median, the middle half of sales, and whiskers at the 10th and 90th percentiles. Hovering over a box shows the sales count, median, middle 50% range, and whisker values. The whiskers are percentiles, not the true minimum and maximum, so a few extreme sales do not stretch the axis. Sales beyond the −100% to 100% axis are not drawn. The axis is limited to −100% to 100%, and the chart says how many sales fall outside that range.
-- A table of sold (`Invoiced`) records, with sales price, repair cost, margin, and the reason a margin is blank. Sorting and filtering work as in the scrap view. A switch above the table hides sales without a margin, and another shows only weak margins. The box plots always use only sales with a margin.
+- Two tabs. The "Per-part margin" tab has one row per part number. It shows the sales count, the median repair margin across that part's sales with a margin, and the share of those sales below 20%. Parts with fewer than 5 sales are listed last, the same rule as the scrap view.
+- The "Sold part records" tab lists each sold (`Invoiced`) record, with sales price, repair cost, margin, and the reason a margin is blank. Sorting and filtering work as in the scrap view. A switch above the table hides sales without a margin, and another shows only weak margins. The box plots always use only sales with a margin.
 - **Weak margin:** a repair margin below 20%, including negative margins. In the table, negative margins are shown in red, margins from 0% to below 20% in yellow, and margins of 20% or more in green. The weakest-margins switch lists these sales with the lowest margin first.
 
 Definitions:
