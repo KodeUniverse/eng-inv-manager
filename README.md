@@ -55,19 +55,17 @@ All tables use AG Grid sorting and filtering in the browser, 15 rows per page. P
 
 - **Scrap rate:** scrapped ÷ all records in the group; per part, scrapped ÷ all records for that `PART`. Parts with fewer than 5 records rank last because 1 of 1 would show as 100%. **Share of scrap:** scrapped in group ÷ all scrapped.
 - Rate and share charts are shown by `Module` and `SubType`, plus a per-part table ranked by scrap rate (`GET /parts/scrapped/summary`, `GET /parts/scrapped`).
-- Limit: on-hand records are unresolved, so scrap rates are lower bounds for groups with much inventory.
 
 ### Repair economics view
 
 - **Margin:** (unit sales price − unit repair cost) ÷ unit sales price. Blank margin means no repair cost or a non-positive sales price. **Weak margin** is below 20%, including negative.
 - Margin is shown as box plots by `Module` and `SubType` (median, middle half, and 10th/90th-percentile whiskers on a −100% to 100% axis), plus per-part and sold-record tables (`GET /parts/sold`).
-- Limits: margin excludes acquisition and lease cost, so it is not profit. Each sale counts once, so frequent sellers carry more weight.
 
 ### Inventory and sell-through view
 
 - **Actual days to sell:** invoice date − `OH_DATE` (`m/d/yyyy`). **Expected days:** `AvgNoofSalesDays`, rounded to whole days. **Days over expected:** actual − expected per record; charts show the median of these differences, not median actual − median expected.
 - 6,064 of 7,277 sold records have a usable on-hand date. Charts compare actual and expected median days by `Module` and `SubType`; the table groups on-hand `QTY` and distinct part counts by `Module`, `SubType`, warehouse, and condition (`GET /sellthrough/summary`, `GET /parts/inventory`).
-- Limits: quantities are a snapshot; `OH_DATE`'s format is validated but its business meaning (arrival, listing, or repair completion) is not defined in detail. Almost all groups sell faster than `AvgNoofSalesDays` predicts using this method.
+- Limits: `OH_DATE`'s business meaning (arrival, listing, or repair completion) is not defined in detail. Almost all groups sell faster than `AvgNoofSalesDays` predicts using this method.
 
 ### Decision-support view: parts to review
 
@@ -76,12 +74,12 @@ All tables use AG Grid sorting and filtering in the browser, 15 rows per page. P
 - **High scrap:** scrap rate ≥ 20% with at least 5 records. **Weak margin:** median margin < 20% with at least 5 margin-bearing sales. **Slow:** median days to sell > 180 with at least 5 dated sales.
 - A check with too little evidence is a dash plus "Low sample", not a failure or a pass.
 - Suggested actions: margin ≥ 20% = "Repair & sell"; 0–20% = "Pricing review"; below 0% = "Scrap candidate"; fewer than 5 margin samples = "Manual review".
-- Limits: 2,024 on-hand parts have never sold, so they have no margin/days evidence and remain manual. Estimated repair cost assumes past repair costs repeat and measures work in dollars, not lost profit.
+- Limits: 2,024 on-hand parts have never sold, so they have no margin/days evidence and remain manual. Estimated repair cost is calculated with this snapshot's data, more historical data can improve this metric.
 
 ## What I would do with more time
 
-- Re-align shifted rows where the missing field can be identified to save more data.
-- Clarify the business meaning of `OH_DATE` and other columns.
+- Re-align the seemingly shifted rows where the missing field can be identified to save more data.
+- Clarify the business meaning of `OH_DATE` and other columns so that I can use them better.
 - Add CSV export for the scrap and margin views (currently csv export of the full dataset is in an API route).
 
 ## How AI tools were used
