@@ -24,7 +24,7 @@ cd backend && uv run pytest
 
 ## Data
 
-The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never edited. Cleaning writes `parts_clean` and `cleaning_log` to `backend/data/inventory.db`. Impact: 39,338 raw → 35,289 clean; 4,049 rows are dropped (2,333 misaligned rows, 204 `Invoiced` rows with no sales price, and 1,512 exact duplicates, counted after the first two rules). Without cleaning, shifted values would point to the wrong columns, duplicates would inflate counts, and placeholders would remain unstandardized.
+The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never edited. Cleaning writes `parts_clean` and `cleaning_log` to `backend/data/inventory.db`. Impact: 39,338 raw → 35,289 clean; 4,049 rows are dropped (2,333 misaligned rows, 204 `Invoiced` rows with no sales price, and 1,512 exact duplicates, counted after the first two rules).
 
 ### Data issues and how they were handled
 
