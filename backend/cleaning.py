@@ -39,6 +39,7 @@ COLUMNS = {
 VALID_TYPES = ["Inventory", "Invoiced", "Scrapped"]
 PLACEHOLDERS = ["", "NULL"]
 UNCLASSIFIED_COLUMNS = ["module", "sub_type", "condition", "whse"]
+TAXONOMY_LABELS = {"Non-HVM", "CORE", "QEC / LRU", "FAN", "LPT", "Airfoils", "HVM", "LLPs"}
 NUMERIC_COLUMNS = [
     "qty",
     "repair_unit_cost",
@@ -81,6 +82,11 @@ def clean(raw: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, int]]]:
         unclassified = df[col].isin(PLACEHOLDERS)
         steps.append((f"unclassified: {col}", int(unclassified.sum())))
         df[col] = df[col].mask(unclassified, "Unclassified")
+
+    use_updated = ~df["updated_description"].isin(TAXONOMY_LABELS | set(PLACEHOLDERS))
+    improved = use_updated & (df["updated_description"] != df["description"])
+    df["description"] = df["updated_description"].where(use_updated, df["description"])
+    steps.append(("description improved via Updated_Description", int(improved.sum())))
 
     invoiced = df["type"] == "Invoiced"
     invoice_date = pd.to_datetime(df["invoice_date"].where(invoiced), format="%m/%d/%Y")

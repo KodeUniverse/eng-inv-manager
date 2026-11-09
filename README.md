@@ -38,7 +38,7 @@ The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never e
 | `QTY` blank on inventory rows | 863 | Left as `NULL`, not filled with 0 or 1. |
 | `Invoice Date` format | Invoiced rows | Parsed as `m/d/yyyy` and stored as `YYYY-MM-DD`; cleaning stops on a parse failure. |
 | `OH_DATE` format | 1 non-placeholder value | Set to `NULL`; the row is kept because `OH_DATE` is needed only for sell-through. |
-| `Updated_Description` contains taxonomy labels such as `Non-HVM` | 12,340 | Not used; the app shows raw `description`, alphabetically last if a part has several. |
+| `Updated_Description` contains taxonomy labels such as `Non-HVM` | 12,462 | Used conditionally: shown when it holds a real description (e.g. `Starter Valve`), raw `description` used otherwise (alphabetically last if a part has several). 21,937 descriptions improved. |
 | Sold rows with repair cost 0 | 1,265 | Kept; margin blank, labelled "No repair cost recorded". |
 | Sold rows with sales price 0 or less | 152 | Kept; margin blank, labelled "Non-positive sales price"; includes likely credits/reversals. |
 | Sold rows with price at or below repair cost | 358 | Kept and included in margins as real losses. |
