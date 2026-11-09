@@ -1,4 +1,6 @@
-# eng-inv-manager
+# Aviation Part Inventory Manager
+
+![Screenshot of front page](./screenshots/scrap.png)
 
 A web app that helps discover insights for aircraft engine inventory management. It turns a raw parts export into clean data and shows where value is made or lost, and which parts on hand to repair, sell, or scrap.
 
