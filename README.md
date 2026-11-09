@@ -63,9 +63,9 @@ All tables use AG Grid sorting and filtering in the browser, 15 rows per page. P
 
 ### Inventory and sell-through view
 
-- **Actual days to sell:** invoice date − `OH_DATE` (`m/d/yyyy`). **Expected days:** `AvgNoofSalesDays`, rounded to whole days. **Days over expected:** actual − expected per record; charts show the median of these differences, not median actual − median expected.
+- **Actual days to sell:** invoice date − `OH_DATE`. **Expected days:** `AvgNoofSalesDays`, rounded to whole days. **Days over expected:** actual − expected per record; charts show the median of these differences, not median actual − median expected.
 - 6,064 of 7,277 sold records have a usable on-hand date. Charts compare actual and expected median days by `Module` and `SubType`; the table groups on-hand `QTY` and distinct part counts by `Module`, `SubType`, warehouse, and condition (`GET /sellthrough/summary`, `GET /parts/inventory`).
-- Limits: `OH_DATE`'s business meaning (arrival, listing, or repair completion) is not defined in detail. Almost all groups sell faster than `AvgNoofSalesDays` predicts using this method.
+- Limits: `OH_DATE`'s business meaning (arrival, listing, or repair completion) is not defined in detail. Almost all groups sell faster than `AvgNoofSalesDays` predicts using this method, would bring this up in follow-up conversation about the app.
 
 ### Decision-support view: parts to review
 
