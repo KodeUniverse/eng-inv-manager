@@ -110,5 +110,4 @@ Every table is AG Grid Community (MIT) sorting and filtering the full dataset in
 - Add CSV export for the scrap and margin views, not just the full table.
 
 ## How AI tools were used
-
-TODO: to be completed by the author.
+I used AI tools to help me quickly investigate the data through scripts, test the backend by generating test data, generating code segments to review, and automating installation of dependencies.
