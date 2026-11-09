@@ -38,14 +38,14 @@ The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never e
 | `QTY` blank on inventory rows | 863 | Left as `NULL`, not filled with 0 or 1. |
 | `Invoice Date` format | Invoiced rows | Parsed as `m/d/yyyy` and stored as `YYYY-MM-DD`; cleaning stops on a parse failure. |
 | `OH_DATE` format | 1 non-placeholder value | Set to `NULL`; the row is kept because `OH_DATE` is needed only for sell-through. |
-| `Updated_Description` contains taxonomy labels such as `Non-HVM` | 12,462 | Used conditionally: shown when it holds a real description (e.g. `Starter Valve`), raw `description` used otherwise (alphabetically last if a part has several). 21,937 descriptions improved. |
+| `Updated_Description` contains taxonomy labels such as `Non-HVM` | 12,462 | Used conditionally: shown when it holds a real description (e.g. `Starter Valve`), raw `description` used otherwise (alphabetically last if a part has several). |
 | Sold rows with repair cost 0 | 1,265 | Kept; margin blank, labelled "No repair cost recorded". |
 | Sold rows with sales price 0 or less | 152 | Kept; margin blank, labelled "Non-positive sales price"; includes likely credits/reversals. |
 | Sold rows with price at or below repair cost | 358 | Kept and included in margins as real losses. |
 
 Unpriced inventory and scrapped rows are kept for the on-hand and scrap views.
 
-Some issues remain: `OrderNo` has decimal/corrupted values; `Condition` mixes letters with numbers; and `NULL`/`N/A` placeholders remain in untouched text columns such as `SN`, `FSC`, `PO_No`, and `OrderNo`, however these are not used in the analysis so they do not corrupt the data.
+Some issues remain: `OrderNo` has decimal/corrupted values; `NULL`/`N/A` placeholders remain in untouched text columns such as `SN`, `FSC`, `PO_No`, and `OrderNo`, however these are not used in the analysis so they do not corrupt the data.
 
 ## Views and definitions
 
