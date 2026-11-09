@@ -48,6 +48,30 @@ export type SellThroughSummary = {
   sub_type: SellGroup[]
 }
 
+export type ReviewPart = {
+  part: string
+  description: string
+  module: string
+  sub_type: string
+  qty_on_hand: number
+  sales: number
+  median_margin: number | null
+  avg_unit_repair_cost: number | null
+  avg_unit_sales_price: number | null
+  median_days_to_sell: number | null
+  scrap_rate: number
+  scrapped: number
+  high_scrap: boolean
+  weak_margin: boolean
+  slow: boolean
+  scrap_sampled: boolean
+  margin_sampled: boolean
+  days_sampled: boolean
+  flags: number
+  exposure: number | null
+  action: string
+}
+
 export type ScrapPart = {
   part: string
   description: string

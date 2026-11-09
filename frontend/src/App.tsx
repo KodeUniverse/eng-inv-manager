@@ -11,6 +11,7 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import InventoryView from "./views/InventoryView";
+import PartsReviewView from "./views/PartsReviewView";
 import RepairEconomicsView from "./views/RepairEconomicsView";
 import ScrapView from "./views/ScrapView";
 
@@ -29,6 +30,8 @@ function renderView(view: string) {
       return <RepairEconomicsView />;
     case "inventory":
       return <InventoryView />;
+    case "decision":
+      return <PartsReviewView />;
     default:
       return <Text c="dimmed">This view isn't built yet.</Text>;
   }
@@ -40,7 +43,7 @@ function App() {
   const colorScheme = useComputedColorScheme("dark");
 
   return (
-    <Container size={1600} py="md">
+    <Container size={1800} py="md">
       <Stack>
         <Group justify="space-between" wrap="wrap">
           <Title order={2}>Parts Inventory</Title>

@@ -13,19 +13,23 @@ docker compose up --build
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8080 (interactive docs at `/docs`)
 
-After changing `pyproject.toml` or `package.json`, rebuild with `docker compose down -v && docker compose up --build`. The `-v` flag clears the container's stored dependencies.
+Rebuild with `docker compose down -v && docker compose up --build` after changing `pyproject.toml` or `package.json`; the `-v` flag clears the container's stored dependencies.
 
-The app reads `backend/data/inventory.db`, which is built from the raw export. To rebuild it:
+The backend runs `cleaning.py` before starting FastAPI, so `docker compose up --build` rebuilds `backend/data/inventory.db` from the raw export and then serves it. If cleaning stops on bad data, the backend container fails at startup instead of serving a stale database. This takes a few seconds on boot. Rebuilding locally without Docker:
 
 ```bash
 cd backend && uv run python cleaning.py
 ```
 
-Run the cleaning script again whenever the raw export changes. It replaces the database and writes a row count for each rule.
+Backend tests run outside Docker:
+
+```bash
+cd backend && uv run pytest
+```
 
 ## Data
 
-The raw file is `backend/data/data.csv` (39,338 rows, 25 columns). It is never edited. The cleaning script reads it and writes `parts_clean` and `cleaning_log` tables to `backend/data/inventory.db`.
+The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never edited. The cleaning script reads it and writes `parts_clean` and `cleaning_log` tables to `backend/data/inventory.db`. Row counts: 39,338 raw → 35,289 clean.
 
 ### Data issues and how they were handled
 
@@ -45,100 +49,62 @@ The raw file is `backend/data/data.csv` (39,338 rows, 25 columns). It is never e
 | Sold rows with a sales price of 0 or less | 152 | Kept. Margin is blank and the row is labelled "Non-positive sales price". These include negative prices, probably credits or reversals. |
 | Sold rows where the price is at or below the repair cost | 358 | Kept and included in margins, since they are real losses. |
 
-Unpriced inventory and scrapped rows are kept. They have no price because they aren't sold, so dropping them would remove the on-hand and scrap views.
-
-Row counts: 39,338 raw → 35,289 clean.
+Unpriced inventory and scrapped rows are kept — they have no price because they aren't sold, so dropping them would remove the on-hand and scrap views.
 
 ### Known data issues not yet handled
 
 - `OrderNo` contains decimal values and should be treated as unreliable.
 - `Condition` mixes letter codes with numbers such as `0` and `870`.
-- Placeholders such as `NULL` and `N/A` remain in text columns that the cleaning rules don't touch, including `SN`, `FSC`, `PO_No`, and `OrderNo`.
+- Placeholders such as `NULL` and `N/A` remain in text columns the cleaning rules don't touch, including `SN`, `FSC`, `PO_No`, and `OrderNo`.
 - `OH_DATE` has not been validated the way `Invoice Date` has.
 
-## Definitions
+## Tables in the app
 
-- **Scrap rate (per Module or SubType):** scrapped records ÷ all records in that group. This is the main scrap metric, because it answers how often parts handled in a group end up scrapped.
-- **Scrap rate (per part number):** scrapped records ÷ all records for that `PART`. Parts with fewer than 5 records are ranked below the others, because one scrapped record out of one would show as 100%.
-- **Share of scrap:** scrapped records in a group ÷ all scrapped records. This shows where scrap volume is concentrated, and it's shown as pie charts.
-
-### Limits
-
-- The export is a snapshot. Inventory records haven't been resolved yet, so a part still on the shelf might be scrapped later. Scrap rates for groups with a lot of inventory are lower bounds.
-- Sell-through (`AvgNoofSalesDays`) exists only for some record types, so averages are computed only where the field is populated.
+Every table is AG Grid Community (MIT) sorting and filtering the full dataset in the browser, 15 rows per page. Click a column header once to sort ascending, twice descending, and a third time to return to the view's rank order; use a column's filter icon for text or numeric filters. Parts with too few records to judge are listed last with a "Low sample" badge in every view.
 
 ## Scrap view
 
-The scrap view is built. It shows:
-
-- Scrap rate by Module and by SubType, as bar charts. Hovering shows the scrapped count and total records.
-- Share of all scrap by Module and by SubType, as pie charts. Hovering shows the scrapped count.
-- A table of parts with at least one scrapped record, ranked by scrap rate. Parts with fewer than 5 records are listed last and marked "Low sample".
-- The table starts in rank order: scrap rate, with parts under 5 records last. Click a column header once for ascending, twice for descending, and a third time to return to rank order. Under a scrap rate sort, parts under 5 records stay last.
-- Use the filter icon on a column header to filter: text contains for part number and description, and numeric comparisons for total records, scrapped count, and scrap rate (%). Sorting and filtering apply to all rows before paging.
-- The table uses AG Grid Community (MIT). It sorts and filters the full dataset in the browser.
-
-API endpoints:
-
-- `GET /parts/scrapped/summary` returns the Module and SubType figures.
-- `GET /parts/scrapped?min_records=5` returns the part table. `min_records` defaults to 5.
-
-The part table shows the raw `description`. The `Updated_Description` column is not used (see the data issues above). Where a part number has more than one description, the table shows the alphabetically last one.
+- **Scrap rate (per Module or SubType):** scrapped records ÷ all records in that group. The main scrap metric, because it answers how often parts handled in a group end up scrapped.
+- **Scrap rate (per part number):** scrapped records ÷ all records for that `PART`. Parts with fewer than 5 records rank last, because one scrapped record out of one record would show as 100%.
+- **Share of scrap:** scrapped records in a group ÷ all scrapped records. Where scrap volume is concentrated.
+- Shown as bar charts (rate) and pie charts (share) by Module and SubType — `GET /parts/scrapped/summary` — plus a per-part table ranked by scrap rate — `GET /parts/scrapped?min_records=5` (default 5). Hovering shows the scrapped count and total records.
+- The part table shows the raw `description` (`Updated_Description` is not used); where a part number has more than one description, the alphabetically last one is shown.
+- Limit: the export is a snapshot. Inventory records haven't been resolved yet, so a part still on the shelf might be scrapped later — scrap rates for groups with a lot of inventory are lower bounds.
 
 ## Repair economics view
 
-The repair economics view is built. It shows:
-
-- Margin by Module and by SubType, as box plots. Each box shows the median, the middle half of sales, and whiskers at the 10th and 90th percentiles. Hovering over a box shows the sales count, median, middle 50% range, and whisker values. The whiskers are percentiles, not the true minimum and maximum, so a few extreme sales do not stretch the axis. Sales beyond the −100% to 100% axis are not drawn. The axis is limited to −100% to 100%, and the chart says how many sales fall outside that range.
-- Two tabs. The "Per-part margin" tab has one row per part number. It shows the sales count, the median repair margin across that part's sales with a margin, and the share of those sales below 20%. Parts with fewer than 5 sales are listed last, the same rule as the scrap view.
-- The "Sold part records" tab lists each sold (`Invoiced`) record, with sales price, repair cost, margin, and the reason a margin is blank. Sorting and filtering work as in the scrap view. A switch above the table hides sales without a margin, and another shows only weak margins. The box plots always use only sales with a margin.
-- **Weak margin:** a repair margin below 20%, including negative margins. In the table, negative margins are shown in red, margins from 0% to below 20% in yellow, and margins of 20% or more in green. The weakest-margins switch lists these sales with the lowest margin first.
-
-Definitions:
-
-- **Margin:** (unit sales price − unit repair cost) ÷ unit sales price. Unit values are used, so quantity does not change the margin.
-- **Blank margin:** a sale with no repair cost or a non-positive sales price has no margin.
-
-Limits:
-
-- Margin is sale price minus repair cost only. The dataset has no acquisition or lease cost, so this is not profit.
-- Each sale counts once in the box plots, so a part that sells often has more weight than one that sells rarely.
+- **Margin:** (unit sales price − unit repair cost) ÷ unit sales price, on unit values only, so quantity does not change it.
+- **Blank margin:** a sale with no repair cost or a non-positive sales price has none; both are labelled and kept in the record list.
+- **Weak margin:** a repair margin below 20%, including negatives. Negative margins show in red, 0% to below 20% in yellow, and 20% or more in green.
+- Margin by Module and SubType as box plots — median and middle half of sales, whiskers at the 10th and 90th percentiles so a few extreme sales don't stretch the −100% to 100% axis; sales beyond the axis are not drawn and the chart says how many. Hovering shows the sales count, median, middle 50% range, and whisker values.
+- A "Per-part margin" tab with one row per part — sales count, median repair margin across that part's sales with a margin, share of those sales below 20%; parts with fewer than 5 sales list last (`GET /parts/sold` backs both tabs).
+- A "Sold part records" tab listing each sold (`Invoiced`) record with sales price, repair cost, margin, and the reason a margin is blank. A switch hides sales without a margin; another shows only weak margins, lowest first.
+- Limits: margin is sale price minus repair cost only — the dataset has no acquisition or lease cost, so this is not profit. Each sale counts once in the box plots, so a part that sells often weighs more than one that sells rarely.
 
 ## Inventory and sell-through view
 
-The inventory view is built. It shows:
+- **Actual days to sell:** invoice date − on-hand date (`OH_DATE`, parsed as `m/d/yyyy`) on the same sold record.
+- **Expected days to sell:** the record's `AvgNoofSalesDays`, rounded to a whole day before medians are taken. `median_expected_days` is the counted records' median expectation, not an average of the field across parts.
+- **Days over expected:** actual − expected per record. Bars show the median of the per-record differences, so it is not the same as median actual − median expected (CORE's median difference is −18 days while its separate medians imply −24).
+- Funnel: of 7,277 sold records, 1,212 have no on-hand date and 1 has an unparseable one, leaving 6,064 counted. Every figure for a group is computed from the same counted records, one `(actual, expected)` pair per sold record.
+- Two bar charts of actual-vs-expected median days by Module and SubType, sorted worst difference first — `GET /sellthrough/summary`; hovering shows the sales count, the mean and median difference, and the median actual and expected days. Outliers are kept.
+- One table of on-hand inventory grouped by Module, SubType, warehouse, and condition with summed `QTY` and distinct part counts — 201 groups — `GET /parts/inventory`, sorted by part count descending on open.
+- Limits: quantities are a snapshot sum of `QTY`, and one group has no recorded quantity (blank). Part numbers are not visible at this grouping level. `OH_DATE` has not been validated — it may be arrival, listing, or repair completion. Sell-through exists only where the field is populated, and figures are computed only there. Almost every group shows a negative median: parts sell faster than `AvgNoofSalesDays` predicts, so either the field is not calibrated to this definition or parts are expected to sit longer than they do.
 
-- Two horizontal bar charts of sell-through, by Module and by SubType, above the inventory table. Each group shows two bars: the median actual days between the on-hand date and the invoice date, and the median expected days to sell (`AvgNoofSalesDays`). Groups are sorted by the median difference between actual and expected, worst first, so the slowest-selling population is at the top. Hovering shows the sales count, the mean and median difference, and the median actual and expected days. Outliers are kept in these figures.
-- One table of on-hand inventory, grouped by the brief's four dimensions (Module, SubType, warehouse, and condition). Each row shows the summed `QTY` and the count of distinct part numbers in that group. The cleaned dataset produces 201 groups, sorted by part count descending when the page opens. Sorting and filtering are available on every column, 15 rows per page.
+## Decision-support view: parts to review
 
-API endpoints:
-
-- `GET /sellthrough/summary` returns the Module and SubType sell-through figures.
-- `GET /parts/inventory` returns the grouped on-hand table.
-
-Definitions:
-
-- **Actual days to sell:** invoice date − on-hand date (`OH_DATE`), for sold (`Invoiced`) records with both dates parsed. `OH_DATE` is parsed as `m/d/yyyy`.
-- **Expected days to sell:** `AvgNoofSalesDays` on the same record. `median_expected_days` is the median of the counted records' expected values in that group — a representative sale record's expectation, not an average of the field across parts. The value is rounded to a whole day per record before the median is taken.
-- **Shared record set:** every sell-through figure for a group — the sales count, the median actual days, the median expected days, and the differences — is computed from the same records: one `(actual, expected)` pair per counted sold record, with no part-level de-duplication or re-weighting.
-- **Days over expected:** actual − expected. The bars show the median; the tooltip also shows the mean, the median actual days, and the median expected days. Positive means slower than expected. Note that the median difference is the median of per-record differences, so it is not the same as median actual − median expected (for example, CORE's median difference is −18 days while its separate medians imply −24).
-- The funnel: 7,277 sold records, of which 1,212 have no on-hand date and 1 has an unparseable one, leaving 6,064 counted.
-
-Limits:
-
-- Quantities are a snapshot sum of `QTY`. One group has no recorded quantity and shows blank.
-- Part numbers are not visible at this level of grouping; a part-level table can be added alongside later.
-- `OH_DATE` has not been validated; it may be arrival or repair completion rather than the date the item became sellable.
-- Almost every group shows a negative median, meaning parts sell faster than `AvgNoofSalesDays` predicts. Either the expected field is not calibrated to this definition, or parts are expected to sit longer than they do.
-
-## Planned decision-support feature
-
-Not built yet. The planned feature is a ranked list of parts to review, using the scrap and margin data.
+- Every part with stock on hand (2,867 parts with a positive on-hand quantity — `GET /parts/review`) is scored on three checks and ranked by how many it fails, so the parts worst on several axes come first.
+- **High scrap:** scrap rate at or above 20%, counted only when the part has at least 5 records.
+- **Weak margin:** median repair margin below 20%, counted only when the part has at least 5 sales with a margin.
+- **Slow:** median days from on-hand date to invoice above 180, counted only when the part has at least 5 such sales.
+- A check with too little evidence is shown as a dash with a "Low sample" badge and does not count against the part — deliberately not treated as a failure or as unknown-good.
+- **Ranking:** flagged checks first (worst first), ties ordered by estimated total repair cost: `on-hand qty × average unit repair cost`, the repair work the stock would likely need if history repeats.
+- **Suggested action:** median margin at or above 20% = "Repair & sell", 0–20% = "Pricing review", below 0% = "Scrap candidate", and fewer than 5 margin samples = "Manual review".
+- Limits: 2,024 on-hand parts have never sold, so they carry no margin or days evidence, fail at most the scrap check, and sink toward the bottom — reviews there stay manual. The estimated repair cost assumes past repair costs repeat and measures work in dollars, not profit lost (no acquisition, lease, or scrap-proceeds data). `OH_DATE` semantics are unvalidated. The thresholds (20% scrap, 20% margin, 180 days, minimum sample of 5) are constants in `backend/main.py`; changing one is a one-line edit and shifts the ranking.
 
 ## What I would do with more time
 
 - Re-align the 2,333 shifted rows where the missing field can be identified, instead of dropping them.
-- Add tests for the cleaning rules and metric calculations.
 - Check whether any part numbers appear only in dropped rows, so the app doesn't silently miss them.
 - Validate `OH_DATE` and the remaining text columns.
 - Add CSV export for the scrap and margin views, not just the full table.

@@ -4,7 +4,9 @@ services:
   backend:
     build:
       context: ./backend
-    command: ["fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8080"]
+    command: ["sh", "-c", "python cleaning.py && fastapi dev main.py --host 0.0.0.0 --port 8080"]
+    # run as the host owner so the bind-mounted data directory is writable
+    user: "1000:1000"
     ports:
       - "8080:8080"
     volumes:
