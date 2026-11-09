@@ -17,9 +17,9 @@ import ScrapView from "./views/ScrapView";
 
 const VIEWS = [
   { label: "Scrap", value: "scrap" },
-  { label: "Repair economics", value: "repair" },
-  { label: "Inventory & sell-through", value: "inventory" },
-  { label: "Decision support", value: "decision" },
+  { label: "Repair", value: "repair" },
+  { label: "Inventory", value: "inventory" },
+  { label: "Review Parts", value: "review" },
 ];
 
 function renderView(view: string) {
@@ -30,10 +30,10 @@ function renderView(view: string) {
       return <RepairEconomicsView />;
     case "inventory":
       return <InventoryView />;
-    case "decision":
+    case "review":
       return <PartsReviewView />;
     default:
-      return <Text c="dimmed">This view isn't built yet.</Text>;
+      return <Text c="dimmed">This view doesn't exist.</Text>;
   }
 }
 
@@ -46,7 +46,7 @@ function App() {
     <Container size={1800} py="md">
       <Stack>
         <Group justify="space-between" wrap="wrap">
-          <Title order={2}>Parts Inventory</Title>
+          <Title order={2}>Aviation Parts Inventory Manager</Title>
           <Group>
             <SegmentedControl value={view} onChange={setView} data={VIEWS} />
             <Button variant="default" onClick={toggleColorScheme}>
