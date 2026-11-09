@@ -1,7 +1,9 @@
 import csv
 import io
 import sqlite3
+import statistics
 from contextlib import closing
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
@@ -91,6 +93,67 @@ def sold_parts():
         else:
             row["margin"], row["margin_note"] = round((price - cost) / price, 4), None
     return rows
+
+
+@app.get("/parts/inventory")
+def inventory_groups():
+    """On-hand quantity and distinct part count by Module, SubType, warehouse, and condition."""
+    rows = _read_rows(
+        """
+        SELECT module, sub_type, whse, condition, COUNT(DISTINCT part) AS parts, SUM(qty) AS qty
+        FROM parts_clean
+        WHERE type = 'Inventory'
+        GROUP BY module, sub_type, whse, condition
+        ORDER BY module, sub_type, whse, condition
+        """
+    )
+    return rows
+
+
+def _summarize_days(groups: dict[str, list[tuple[int, int]]]):
+    """Count and median/mean days per group from (actual, expected) pairs, sorted worst first."""
+    result = []
+    for name, records in groups.items():
+        actual = [pair[0] for pair in records]
+        expected = [pair[1] for pair in records]
+        diffs = [a - e for a, e in records]
+        result.append(
+            {
+                "name": name,
+                "count": len(records),
+                "mean_days": round(statistics.mean(diffs), 1),
+                "median_days": statistics.median(diffs),
+                "median_actual_days": statistics.median(actual),
+                "median_expected_days": statistics.median(expected),
+            }
+        )
+    result.sort(key=lambda row: row["median_days"], reverse=True)
+    return result
+
+
+@app.get("/sellthrough/summary")
+def sellthrough_summary():
+    """Median and mean days to sell over (or under) expected, by Module and SubType."""
+    rows = _read_rows(
+        """
+        SELECT module, sub_type, invoice_date, oh_date, avg_sales_days
+        FROM parts_clean
+        WHERE type = 'Invoiced' AND oh_date IS NOT NULL AND oh_date NOT IN ('', 'NULL')
+        """
+    )
+    by_module: dict[str, list[tuple[int, int]]] = {}
+    by_sub_type: dict[str, list[tuple[int, int]]] = {}
+    for row in rows:
+        try:
+            actual = (datetime.strptime(row["invoice_date"], "%Y-%m-%d") - datetime.strptime(row["oh_date"], "%m/%d/%Y")).days
+        except (ValueError, TypeError):
+            continue
+        if row["avg_sales_days"] is None or actual < 0:
+            continue
+        expected = round(row["avg_sales_days"])
+        by_module.setdefault(row["module"], []).append((actual, expected))
+        by_sub_type.setdefault(row["sub_type"], []).append((actual, expected))
+    return {"module": _summarize_days(by_module), "sub_type": _summarize_days(by_sub_type)}
 
 
 @app.get("/parts/scrapped/summary")

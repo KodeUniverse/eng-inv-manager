@@ -10,6 +10,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
+import InventoryView from "./views/InventoryView";
 import RepairEconomicsView from "./views/RepairEconomicsView";
 import ScrapView from "./views/ScrapView";
 
@@ -26,6 +27,8 @@ function renderView(view: string) {
       return <ScrapView />;
     case "repair":
       return <RepairEconomicsView />;
+    case "inventory":
+      return <InventoryView />;
     default:
       return <Text c="dimmed">This view isn't built yet.</Text>;
   }

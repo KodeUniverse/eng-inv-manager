@@ -25,6 +25,29 @@ export type SoldPart = {
   margin_note: string | null
 }
 
+export type InventoryGroup = {
+  module: string
+  sub_type: string
+  whse: string
+  condition: string
+  parts: number
+  qty: number | null
+}
+
+export type SellGroup = {
+  name: string
+  count: number
+  mean_days: number
+  median_days: number
+  median_actual_days: number
+  median_expected_days: number
+}
+
+export type SellThroughSummary = {
+  module: SellGroup[]
+  sub_type: SellGroup[]
+}
+
 export type ScrapPart = {
   part: string
   description: string

@@ -104,6 +104,33 @@ Limits:
 - Margin is sale price minus repair cost only. The dataset has no acquisition or lease cost, so this is not profit.
 - Each sale counts once in the box plots, so a part that sells often has more weight than one that sells rarely.
 
+## Inventory and sell-through view
+
+The inventory view is built. It shows:
+
+- Two horizontal bar charts of sell-through, by Module and by SubType, above the inventory table. Each group shows two bars: the median actual days between the on-hand date and the invoice date, and the median expected days to sell (`AvgNoofSalesDays`). Groups are sorted by the median difference between actual and expected, worst first, so the slowest-selling population is at the top. Hovering shows the sales count, the mean and median difference, and the median actual and expected days. Outliers are kept in these figures.
+- One table of on-hand inventory, grouped by the brief's four dimensions (Module, SubType, warehouse, and condition). Each row shows the summed `QTY` and the count of distinct part numbers in that group. The cleaned dataset produces 201 groups, sorted by part count descending when the page opens. Sorting and filtering are available on every column, 15 rows per page.
+
+API endpoints:
+
+- `GET /sellthrough/summary` returns the Module and SubType sell-through figures.
+- `GET /parts/inventory` returns the grouped on-hand table.
+
+Definitions:
+
+- **Actual days to sell:** invoice date − on-hand date (`OH_DATE`), for sold (`Invoiced`) records with both dates parsed. `OH_DATE` is parsed as `m/d/yyyy`.
+- **Expected days to sell:** `AvgNoofSalesDays` on the same record. `median_expected_days` is the median of the counted records' expected values in that group — a representative sale record's expectation, not an average of the field across parts. The value is rounded to a whole day per record before the median is taken.
+- **Shared record set:** every sell-through figure for a group — the sales count, the median actual days, the median expected days, and the differences — is computed from the same records: one `(actual, expected)` pair per counted sold record, with no part-level de-duplication or re-weighting.
+- **Days over expected:** actual − expected. The bars show the median; the tooltip also shows the mean, the median actual days, and the median expected days. Positive means slower than expected. Note that the median difference is the median of per-record differences, so it is not the same as median actual − median expected (for example, CORE's median difference is −18 days while its separate medians imply −24).
+- The funnel: 7,277 sold records, of which 1,212 have no on-hand date and 1 has an unparseable one, leaving 6,064 counted.
+
+Limits:
+
+- Quantities are a snapshot sum of `QTY`. One group has no recorded quantity and shows blank.
+- Part numbers are not visible at this level of grouping; a part-level table can be added alongside later.
+- `OH_DATE` has not been validated; it may be arrival or repair completion rather than the date the item became sellable.
+- Almost every group shows a negative median, meaning parts sell faster than `AvgNoofSalesDays` predicts. Either the expected field is not calibrated to this definition, or parts are expected to sit longer than they do.
+
 ## Planned decision-support feature
 
 Not built yet. The planned feature is a ranked list of parts to review, using the scrap and margin data.
