@@ -27,7 +27,7 @@ function rateSort(a: number, b: number, nodeA: IRowNode<ScrapPart>, nodeB: IRowN
 
 function RateCell({ value, data }: ICellRendererParams<ScrapPart>) {
   return (
-    <Group gap="xs" justify="flex-end" wrap="nowrap">
+    <Group gap="xs" justify="flex-end" align="center" wrap="nowrap" style={{ height: '100%' }}>
       <Text size="sm">{Number(value).toFixed(1)}%</Text>
       {data && !data.enough_records && (
         <Badge color="gray" variant="light" size="sm">
