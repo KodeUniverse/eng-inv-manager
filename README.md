@@ -6,7 +6,7 @@ A web app that helps discover insights for aircraft engine inventory management.
 
 ## Setup and run
 
-Requirements: Docker with Compose.
+Requirements: Docker with Compose was used, this makes the app really easy to deploy in production.
 
 ```bash
 docker compose up --build
@@ -45,7 +45,7 @@ The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never e
 
 Unpriced inventory and scrapped rows are kept for the on-hand and scrap views.
 
-Some issues remain: `OrderNo` has decimal/corrupted values; `Condition` mixes letters with numbers; and `NULL`/`N/A` placeholders remain in untouched text columns such as `SN`, `FSC`, `PO_No`, and `OrderNo`.
+Some issues remain: `OrderNo` has decimal/corrupted values; `Condition` mixes letters with numbers; and `NULL`/`N/A` placeholders remain in untouched text columns such as `SN`, `FSC`, `PO_No`, and `OrderNo`, however these are not used in the analysis so they do not corrupt the data.
 
 ## Views and definitions
 
@@ -67,7 +67,7 @@ All tables use AG Grid sorting and filtering in the browser, 15 rows per page. P
 
 - **Actual days to sell:** invoice date − `OH_DATE` (`m/d/yyyy`). **Expected days:** `AvgNoofSalesDays`, rounded to whole days. **Days over expected:** actual − expected per record; charts show the median of these differences, not median actual − median expected.
 - 6,064 of 7,277 sold records have a usable on-hand date. Charts compare actual and expected median days by `Module` and `SubType`; the table groups on-hand `QTY` and distinct part counts by `Module`, `SubType`, warehouse, and condition (`GET /sellthrough/summary`, `GET /parts/inventory`).
-- Limits: quantities are a snapshot; `OH_DATE`'s format is validated but its meaning (arrival, listing, or repair completion) is not. Almost all groups sell faster than `AvgNoofSalesDays` predicts, suggesting the field is miscalibrated.
+- Limits: quantities are a snapshot; `OH_DATE`'s format is validated but its business meaning (arrival, listing, or repair completion) is not defined in detail. Almost all groups sell faster than `AvgNoofSalesDays` predicts using this method.
 
 ### Decision-support view: parts to review
 
@@ -80,10 +80,9 @@ All tables use AG Grid sorting and filtering in the browser, 15 rows per page. P
 
 ## What I would do with more time
 
-- Re-align shifted rows where the missing field can be identified.
-- Check whether part numbers appear only in dropped rows.
-- Validate the business meaning of `OH_DATE` and remaining text columns.
-- Add CSV export for the scrap and margin views, not just the full table.
+- Re-align shifted rows where the missing field can be identified to save more data.
+- Clarify the business meaning of `OH_DATE` and other columns.
+- Add CSV export for the scrap and margin views (currently csv export of the full dataset is in an API route).
 
 ## How AI tools were used
 
