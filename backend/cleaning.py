@@ -86,6 +86,11 @@ def clean(raw: pd.DataFrame) -> tuple[pd.DataFrame, list[tuple[str, int]]]:
     invoice_date = pd.to_datetime(df["invoice_date"].where(invoiced), format="%m/%d/%Y")
     df["invoice_date"] = invoice_date.dt.strftime("%Y-%m-%d")
 
+    oh_date = pd.to_datetime(df["oh_date"], format="%m/%d/%Y", errors="coerce")
+    unreadable = oh_date.isna() & ~df["oh_date"].isin(PLACEHOLDERS)
+    steps.append(("set to NULL: unreadable oh_date", int(unreadable.sum())))
+    df["oh_date"] = oh_date.dt.strftime("%m/%d/%Y")
+
     for col in NUMERIC_COLUMNS:
         values = pd.to_numeric(df[col], errors="coerce")
         unreadable = values.isna() & ~df[col].isin(PLACEHOLDERS)

@@ -46,6 +46,7 @@ The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never e
 | `WHSE` blank (mostly scrapped parts, which have no warehouse) | 12,691 | Labelled `Unclassified`. |
 | `QTY` blank on inventory rows | 863 | Left as `NULL`. Not filled with 0 or 1. |
 | `Invoice Date` in mixed formats | Invoiced rows | Parsed as `m/d/yyyy` and stored as `YYYY-MM-DD`. The script stops if a date fails to parse. Excel serial numbers and codes such as `F0301` appear only in dropped rows. |
+| `OH_DATE` that doesn't parse as `m/d/yyyy` | 1 non-placeholder value | Set to `NULL`; the row is kept because `OH_DATE` is only needed for sell-through. Blank and `NULL` values are also left as `NULL`. |
 | `Updated_Description` holds taxonomy labels such as `Non-HVM` | 12,340 | Not used. The app shows the raw `description` column instead. |
 | Sold (`Invoiced`) rows with a repair cost of 0 | 1,265 | Kept. Margin is blank and the row is labelled "No repair cost recorded". A zero cost would otherwise show as a 100% margin. |
 | Sold rows with a sales price of 0 or less | 152 | Kept. Margin is blank and the row is labelled "Non-positive sales price". These include negative prices, probably credits or reversals. |
@@ -58,7 +59,6 @@ Unpriced inventory and scrapped rows are kept — they have no price because the
 - `OrderNo` contains decimal values and should be treated as unreliable.
 - `Condition` mixes letter codes with numbers such as `0` and `870`.
 - Placeholders such as `NULL` and `N/A` remain in text columns the cleaning rules don't touch, including `SN`, `FSC`, `PO_No`, and `OrderNo`.
-- `OH_DATE` has not been validated the way `Invoice Date` has.
 
 ## Tables in the app
 
@@ -88,10 +88,10 @@ Every table is AG Grid Community (MIT) sorting and filtering the full dataset in
 - **Actual days to sell:** invoice date − on-hand date (`OH_DATE`, parsed as `m/d/yyyy`) on the same sold record.
 - **Expected days to sell:** the record's `AvgNoofSalesDays`, rounded to a whole day before medians are taken. `median_expected_days` is the counted records' median expectation, not an average of the field across parts.
 - **Days over expected:** actual − expected per record. Bars show the median of the per-record differences, so it is not the same as median actual − median expected (CORE's median difference is −18 days while its separate medians imply −24).
-- Funnel: of 7,277 sold records, 1,212 have no on-hand date and 1 has an unparseable one, leaving 6,064 counted. Every figure for a group is computed from the same counted records, one `(actual, expected)` pair per sold record.
+- Funnel: of 7,277 sold records, 1,212 have no on-hand date and 1 has an unparseable one (set to `NULL` in cleaning), leaving 6,064 counted. Every figure for a group is computed from the same counted records, one `(actual, expected)` pair per sold record.
 - Two bar charts of actual-vs-expected median days by Module and SubType, sorted worst difference first — `GET /sellthrough/summary`; hovering shows the sales count, the mean and median difference, and the median actual and expected days. Outliers are kept.
 - One table of on-hand inventory grouped by Module, SubType, warehouse, and condition with summed `QTY` and distinct part counts — 201 groups — `GET /parts/inventory`, sorted by part count descending on open.
-- Limits: quantities are a snapshot sum of `QTY`, and one group has no recorded quantity (blank). Part numbers are not visible at this grouping level. `OH_DATE` has not been validated — it may be arrival, listing, or repair completion. Sell-through exists only where the field is populated, and figures are computed only there. Almost every group shows a negative median: parts sell faster than `AvgNoofSalesDays` predicts, so either the field is not calibrated to this definition or parts are expected to sit longer than they do.
+- Limits: quantities are a snapshot sum of `QTY`, and one group has no recorded quantity (blank). Part numbers are not visible at this grouping level. `OH_DATE`'s format is validated, but its business meaning is not — it may be arrival, listing, or repair completion. Sell-through exists only where the field is populated, and figures are computed only there. Almost every group shows a negative median: parts sell faster than `AvgNoofSalesDays` predicts, so either the field is not calibrated to this definition or parts are expected to sit longer than they do.
 
 ## Decision-support view: parts to review
 
@@ -108,7 +108,7 @@ Every table is AG Grid Community (MIT) sorting and filtering the full dataset in
 
 - Re-align the 2,333 shifted rows where the missing field can be identified, instead of dropping them.
 - Check whether any part numbers appear only in dropped rows, so the app doesn't silently miss them.
-- Validate `OH_DATE` and the remaining text columns.
+- Validate the business meaning of `OH_DATE` and the remaining text columns.
 - Add CSV export for the scrap and margin views, not just the full table.
 
 ## How AI tools were used
