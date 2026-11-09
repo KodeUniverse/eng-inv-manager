@@ -31,7 +31,9 @@ cd backend && uv run pytest
 
 ## Data
 
-The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never edited. The cleaning script reads it and writes `parts_clean` and `cleaning_log` tables to `backend/data/inventory.db`. Row counts: 39,338 raw → 35,289 clean.
+The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never edited. The cleaning script reads it and writes `parts_clean` and `cleaning_log` tables to `backend/data/inventory.db`.
+
+Cleaning impact: 39,338 raw → 35,289 clean, so 4,049 rows (about 10.3%) are dropped and the cleaned dataset keeps about 89.7% of the raw rows. The drops account for 2,333 misaligned rows, 204 invoiced rows without a sales price, and 1,512 exact duplicates.
 
 ### Data issues and how they were handled
 
@@ -47,7 +49,6 @@ The raw file is `backend/data/data.csv` (39,338 rows, 25 columns) and is never e
 | `QTY` blank on inventory rows | 863 | Left as `NULL`. Not filled with 0 or 1. |
 | `Invoice Date` in mixed formats | Invoiced rows | Parsed as `m/d/yyyy` and stored as `YYYY-MM-DD`. The script stops if a date fails to parse. Excel serial numbers and codes such as `F0301` appear only in dropped rows. |
 | `OH_DATE` that doesn't parse as `m/d/yyyy` | 1 non-placeholder value | Set to `NULL`; the row is kept because `OH_DATE` is only needed for sell-through. Blank and `NULL` values are also left as `NULL`. |
-| `Updated_Description` holds taxonomy labels such as `Non-HVM` | 12,340 | Not used. The app shows the raw `description` column instead. |
 | Sold (`Invoiced`) rows with a repair cost of 0 | 1,265 | Kept. Margin is blank and the row is labelled "No repair cost recorded". A zero cost would otherwise show as a 100% margin. |
 | Sold rows with a sales price of 0 or less | 152 | Kept. Margin is blank and the row is labelled "Non-positive sales price". These include negative prices, probably credits or reversals. |
 | Sold rows where the price is at or below the repair cost | 358 | Kept and included in margins, since they are real losses. |
@@ -62,16 +63,15 @@ Unpriced inventory and scrapped rows are kept — they have no price because the
 
 ## Tables in the app
 
-Every table is AG Grid Community (MIT) sorting and filtering the full dataset in the browser, 15 rows per page. Click a column header once to sort ascending, twice descending, and a third time to return to the view's rank order; use a column's filter icon for text or numeric filters. Parts with too few records to judge are listed last with a "Low sample" badge in every view.
+Every table is using AG Grid, sorting and filtering in the browser, 15 rows per page. Click column headers to sort ascending/descending; use a column's filter icon for text or numeric filters. Parts with too few records to judge (<5) are listed last with a "Low sample" badge in every view.
 
 ## Scrap view
 
 - **Scrap rate (per Module or SubType):** scrapped records ÷ all records in that group. The main scrap metric, because it answers how often parts handled in a group end up scrapped.
 - **Scrap rate (per part number):** scrapped records ÷ all records for that `PART`. Parts with fewer than 5 records rank last, because one scrapped record out of one record would show as 100%.
 - **Share of scrap:** scrapped records in a group ÷ all scrapped records. Where scrap volume is concentrated.
-- Shown as bar charts (rate) and pie charts (share) by Module and SubType — `GET /parts/scrapped/summary` — plus a per-part table ranked by scrap rate — `GET /parts/scrapped?min_records=5` (default 5). Hovering shows the scrapped count and total records.
-- The part table shows the raw `description` (`Updated_Description` is not used); where a part number has more than one description, the alphabetically last one is shown.
-- Limit: the export is a snapshot. Inventory records haven't been resolved yet, so a part still on the shelf might be scrapped later — scrap rates for groups with a lot of inventory are lower bounds.
+- Shown as bar charts (% rate) and pie charts (share) by Module and SubType — `GET /parts/scrapped/summary` — plus a per-part table ranked by scrap rate — `GET /parts/scrapped?min_records=5` (default 5). Hovering shows the scrapped count and total records.
+- The part table shows the raw `description`. Where a part number has more than one description, the alphabetically last one is shown.
 
 ## Repair economics view
 
@@ -112,4 +112,4 @@ Every table is AG Grid Community (MIT) sorting and filtering the full dataset in
 - Add CSV export for the scrap and margin views, not just the full table.
 
 ## How AI tools were used
-I used AI tools to help me quickly investigate the data through scripts, test the backend by generating test data, generating code segments to review, and automating installation of dependencies.
+I used AI tools to help me quickly investigate the data through scripts, test the backend by generating test data, generating code segments to review, and automating installation of dependencies. I also used to run testing loops and make quick changes to the visual color-scheme and layout.
